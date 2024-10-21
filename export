@@ -1,0 +1,79 @@
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
+
+const ExporttPdf = ({ column, data, profileData }) => {
+  const generatePdf = () => {
+    const doc = new jsPDF('landscape')
+    const margin = 20
+
+    // Add logo if available
+    if (profileData?.hotelInfo?.hotelLogo) {
+      const image = new Image()
+      image.src = profileData.hotelInfo.hotelLogo
+      image.onload = () => {
+        doc.addImage(image, 'JPEG', margin, margin, 60, 60)
+      }
+    }
+
+    // Add hotel details
+    doc.setFontSize(16)
+    doc.text(profileData?.hotelInfo?.hotelName || '', margin + 70, margin + 20)
+    doc.setFontSize(10)
+    doc.setTextColor(85, 85, 85)
+    doc.text(profileData?.hotelInfo?.address || '', margin + 70, margin + 35)
+
+    // Add report title
+    doc.setFontSize(14)
+    doc.setFont('bold')
+    doc.text(profileData?.reportTitle || '', margin, margin + 80)
+
+    // Table headers
+    const headers = column.map(col => col.title)
+
+    // Table data
+    const tableData = data.map(row => column.map(col => row[col.dataIndex]))
+
+    // Add table
+    autoTable(doc, {
+      startY: margin + 90,
+      head: [headers],
+      body: tableData,
+      theme: 'striped',
+      styles: {
+        fontSize: 8,
+      },
+      headStyles: {
+        fillColor: [159, 157, 159],
+        textColor: [54, 53, 54],
+      },
+      alternateRowStyles: {
+        fillColor: [226, 224, 226],
+      },
+    })
+
+    // Add page numbers
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(10)
+      doc.setTextColor(128, 128, 128)
+      doc.text(
+        `${i} / ${pageCount}`,
+        doc.internal.pageSize.width - margin - 10,
+        doc.internal.pageSize.height - margin
+      )
+    }
+
+    doc.save(`${profileData?.reportTitle || 'report'}.pdf`)
+  }
+
+  return (
+    <>
+      {/* Render custom table */}
+      {generatePdf()}
+    </>
+  )
+  //  <button onClick={generatePdf}>Download PDF</button>
+}
+
+export default ExporttPdf
